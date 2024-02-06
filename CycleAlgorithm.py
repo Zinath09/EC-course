@@ -17,6 +17,7 @@ class CycleAlgorithm(Algorithm):
     
     def starting_solution(self, starting_node=0, second_node=1):
         self.cur_tour = [[starting_node,second_node], [second_node,starting_node]]
+        self.unvisited = list(range(self.NR_NODES))
         self.unvisited.remove(starting_node)
         self.unvisited.remove(second_node)
         self.total_cost = 2 * self.node_distances[starting_node][second_node]

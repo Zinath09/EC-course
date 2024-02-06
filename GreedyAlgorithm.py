@@ -11,19 +11,22 @@ class GreedyAlgorithm(Algorithm):
         super().__init__(data)
 
         self.total_cost = 0
+        # unorder list of edges
         self.cur_tour = []
-        self.endings
-        self.cost_matrix
+        # first and the last node 
+        self.endings = []
+        # symetric matrix of distances from each node to enother
+        self.cost_matrix = []
         
     
     def starting_solution(self, starting_node=None):
         self.endings= [starting_node]
 
+        
         if self.is_cost:
             self.cost_matrix = self.node_distances + self.cost_list.T
         else:
             self.cost_matrix = self.node_distances
-
         min, ind = get_min_index(self.cost_matrix[starting_node])
 
         self.endings.append(ind)

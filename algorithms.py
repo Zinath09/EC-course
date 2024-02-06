@@ -79,8 +79,10 @@ def two_regret_greedy_cycle(distance_matrix,cost_list,NR_NODES, HALF_NODES, star
 
 
 def greedy_cycle(distance_matrix,cost_list,NR_NODES, HALF_NODES, starting_node ):
-
-    min, second_node = get_min_index(distance_matrix[starting_node]+cost_list[starting_node])
+    #pick second closest node
+    modlify_cost = distance_matrix[starting_node]+cost_list[starting_node]
+    modlify_cost[starting_node] = np.inf
+    second_node = new_get_min_index(modlify_cost)
 
     non_visited = list(range(NR_NODES))
     non_visited.remove(starting_node)
@@ -96,7 +98,7 @@ def greedy_cycle(distance_matrix,cost_list,NR_NODES, HALF_NODES, starting_node )
 
         for e in edges:
             for new_node in non_visited:
-                
+
                 cost_diff = -distance_matrix[e[0]][e[1]] \
                     + distance_matrix[e[0]][ new_node] + distance_matrix[new_node][e[1]] \
                     + cost_list[new_node]
