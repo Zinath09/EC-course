@@ -16,20 +16,23 @@ start_solution = "best"
 alg_type = "greedy"
 # alg_type = "steepest"
 
-exchange = "intra" #poza
-# exchange = "inter" #wewn
+neighbors = "nodes" #poza
+# neighbors = "edges" #wewn
+
 
 data = get_data('TSPD.csv')
+random_list = [i for i in range(len(data))]
+random.shuffle(random_list)
+random_list[:50]
+print(random_list)
 result = dict()
 for start_solution in ['random', 'best']:
     for alg_type in ['greedy', 'steepest']:
-        for exchange in ['intra', 'inter']:
-            random_list = [0,1]#random.randint(0,len(data)-1) for i in range(100)]
-
-            costs, best_sol ,best_ind_random_random, time =  repeat_local(local_search, random_list,data, start_solution, alg_type, exchange)
+        for neighbors in ['nodes', 'edges']:
+            
+            costs, best_sol ,best_ind_random_random, time =  repeat_local(local_search, random_list,data, start_solution, alg_type, neighbors)
             best = f"{[int(x) for x in best_sol]}"
-            print(best)
-            type = f"{'_'.join([start_solution, alg_type, exchange])}"
+            type = f"{'_'.join([start_solution, alg_type, neighbors])}"
             result[type] = dict()
             result[type]["min"] = min(costs)
             result[type]["max"] = max(costs)
@@ -37,7 +40,6 @@ for start_solution in ['random', 'best']:
             result[type]["std"] = np.std(costs)
             result[type]['time'] = time
             result[type]["best"] = best
-
 
 dfs = []
 
