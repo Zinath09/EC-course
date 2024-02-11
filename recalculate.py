@@ -1,5 +1,5 @@
 ### recalculation
-def git rec_inter_node(i_index, j_index, old_lista, dist_matrix):
+def rec_inter_node(i_index, j_index, old_lista, dist_matrix):
     
     n = len(old_lista)
 
@@ -30,6 +30,9 @@ def git rec_inter_node(i_index, j_index, old_lista, dist_matrix):
     delta -= dist_matrix[j][old_lista[(j_index+1)%n]] # zamiast j->j+1
     delta += dist_matrix[j][old_lista[(i_index+1)%n]] # jest j -> i+1
     return delta
+
+
+
 
 
 def rec_edge(i_index, j_index, old_lista, dist_matrix):

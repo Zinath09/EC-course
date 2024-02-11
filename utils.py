@@ -138,10 +138,9 @@ def get_data(path):
     return data
 
 
-def inter_swap_nodes(node_1, node_2, lista):
-    index_1 = lista.index(node_1)
-    index_2 = lista.index(node_2)
-    lista[index_1] = node_2
+def inter_swap_nodes(index_1, index_2, lista):
+    node_1 = lista[index_1]
+    lista[index_1] = lista[index_2]
     lista[index_2] = node_1
     return lista
 
@@ -177,12 +176,10 @@ def find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = 
     if exchange == 'inter':
         for first_ind in range(len(lista)):
             for second_ind in range(first_ind+1, len(lista)):
-                # new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], deepcopy(lista))
-                # new_total = check_total(new_lista, distance_matrix, cost_list)
                 new_total = total_cost + rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix)
                 
                 if new_total < total_cost:
-                    new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], lista)
+                    new_lista = inter_swap_nodes(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista)
 
                     return new_lista, unvisited, new_total, False
                 
@@ -215,16 +212,15 @@ def find_best(lista, total_cost, unvisited, distance_matrix, exchange = 'intra',
                 # new_total = check_total(new_lista, distance_matrix, cost_list)
                 new_total = total_cost + rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix)
                 if new_total < best[2]:
-                    print("delta",rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix) , total_cost, new_total, first_ind, second_ind)
+                    # print("delta",rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix) , total_cost, new_total, first_ind, second_ind)
 
                     best = random_lista_indexes[first_ind], random_lista_indexes[second_ind], new_total, False
 
-        visited_node_index, unvisited_node, new_total, terminate = best
+        first, second, new_total, terminate = best
         if terminate:
             return lista, unvisited, total_cost, terminate
         else:
-            new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], lista)
-            print(len(np.unique(new_lista)))
+            new_lista = inter_swap_nodes(first, second, lista)
             # plotMap(alg.data, alg.create_cur_tour_from_list(new_lista))
             return new_lista, unvisited, new_total, terminate
 

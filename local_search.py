@@ -4,14 +4,14 @@ from utils import check_total, find_best, find_best_edges, find_first_better, fi
 import numpy as np
 from algorithms import greedy_cycle
 import time
-
+from tqdm import tqdm
 def repeat_local(method, indices, data, start_solution, alg_type, neighbors):
     start_time = time.time()
     total_cost = []
     best_cost = np.inf
     best_sol = -1
     best_ind = -1
-    for i in indices:
+    for i in tqdm(indices):
         cost, sol = method(data, start_solution, alg_type, neighbors, i)
         total_cost.append(cost)
         if cost<best_cost:
@@ -58,17 +58,14 @@ def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
     for i in lista:
         unvisited.remove(i)
 
-    for i in range(50):
-        if i%10 == 0:
-            print(i, end = " ")
+    for i in range(500):
         assert total_cost>0, f"Outside function{total_cost, i}"
         if alg_type == "steepest":
-            print(i, total_cost)
             lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra",cost_list=cost_list, alg = alg)
             if neighbors == "nodes":
                 lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "inter", cost_list=cost_list, alg = alg)
-            # elif neighbors == 'edges':
-            #     lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list)
+            elif neighbors == 'edges':
+                lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list)
                                     
         elif alg_type == "greedy":
             first_exchange = ["intra","inter"][random.randint(0,1)]
@@ -85,7 +82,7 @@ def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
                 lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter",cost_list=cost_list)
 
         if terminate:
-            print(f"{'_'.join([start_solution, alg_type, neighbors])}",i)
+            # print(f"{'_'.join([start_solution, alg_type, neighbors])}",i)
             break
         # print(total_cost, i)
     edges = alg.create_cur_tour_from_list(lista)

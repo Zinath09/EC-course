@@ -21,10 +21,10 @@ neighbors = "nodes" #poza
 print("START!!!!!!!!!")
 
 
-data = get_data('TSPD.csv')[::5]
+data = get_data('TSPD.csv')
 random_list = [i for i in range(len(data))]
-random.shuffle(random_list)
-random_list = [0]
+# random.shuffle(random_list)
+# random_list = [0,1,2,3,4,5]
 
 print(len(data))
 # for i in range(len(data)):
