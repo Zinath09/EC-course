@@ -23,13 +23,13 @@ def repeat_local(method, indices, data, start_solution, alg_type, neighbors):
     execution_time = end_time - start_time
     return total_cost, best_sol, best_ind, execution_time
 
-
 def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
 
     n = len(data)
     alg = CycleAlgorithm(data)
 
     distance_matrix = alg.node_distances
+
     cost_list = alg.cost_list
 
 
@@ -38,10 +38,12 @@ def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
         random.shuffle(lista)
         lista = lista[:round(float(len(lista))/2)]
         alg.create_cur_tour_and_update(lista)
-        total_cost = check_total(lista, distance_matrix)
+        total_cost = check_total(lista, distance_matrix, cost_list)
+
 
     if start_solution =="best":
         total_cost, edges = greedy_cycle(distance_matrix, cost_list, n, round(n/2), start_index)
+
         lista = edges[0]
         list_1, list_2 = zip(*edges)
         while True:
@@ -50,35 +52,37 @@ def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
                 break
             lista.append(next)
 
+
     unvisited = [x for x in range(len(data))]
+    
     for i in lista:
         unvisited.remove(i)
-    for i in range(800):
+
+    for i in range(50):
+        if i%10 == 0:
+            print(i, end = " ")
+        assert total_cost>0, f"Outside function{total_cost, i}"
         if alg_type == "steepest":
-
-            lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "inter")
-
+            print(i, total_cost)
+            lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra",cost_list=cost_list, alg = alg)
             if neighbors == "nodes":
-                lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra")
-
-            elif neighbors == 'edges':
-                lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix)
+                lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "inter", cost_list=cost_list, alg = alg)
+            # elif neighbors == 'edges':
+            #     lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list)
                                     
-
         elif alg_type == "greedy":
             first_exchange = ["intra","inter"][random.randint(0,1)]
             if first_exchange == 'inter':
-                    lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter")
+                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter", cost_list=cost_list)
 
             if neighbors == "nodes":
-                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "intra")
+                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "intra", cost_list=cost_list)
 
             elif neighbors == 'edges':
-                lista, unvisited, total_cost, terminate = find_first_better_edges(lista, total_cost, unvisited, distance_matrix)
+                lista, unvisited, total_cost, terminate = find_first_better_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list)
 
             if first_exchange != 'inter':
-                    lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter")
-
+                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter",cost_list=cost_list)
 
         if terminate:
             print(f"{'_'.join([start_solution, alg_type, neighbors])}",i)
@@ -91,14 +95,18 @@ def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
 
 
 
+if "__main__" == __name__:
+    data = get_data('TSPD.csv')
+    print(len(data))
+    # data = [[1,0,0], [1,1,0], [1,2,0], [1,3,0], [2,3,0], [2,2,0], [2,1,0], [2,0,0]]
+    for i in range(len(data)):
+        data[i][-1] = i    
+    start_solution = "random"
+    # start_solution = "best"
+    alg_type = "greedy"
+    # alg_type = "steepest"
 
-data = get_data('TSPD.csv')
-start_solution = "random"
-start_solution = "best"
-alg_type = "greedy"
-# alg_type = "steepest"
+    neighbors = "nodes" 
+    # neighbors = "edges" 
 
-neighbors = "nodes" #poza
-# neighbors = "edges" #wewn
-
-local_search(data, start_solution, alg_type, neighbors)
+    x = local_search(data, start_solution, alg_type, neighbors)

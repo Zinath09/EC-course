@@ -24,8 +24,8 @@ def plotMap(nodes, edges=[], colors = False):
     # plt.scatter(X, Y, S, c = S, cmap="RdYlGn", )
     # plt.scatter(X, Y, c = S, cmap="RdYlGn", )
     plt.scatter(X, Y, c = S, cmap="Greys" )
-    # for i in range(len(nodes)):
-    #     plt.annotate(i, (X[i], Y[i]+0.2))
+    for i in range(len(nodes)):
+        plt.annotate(i, (X[i], Y[i]+0.2))
     plt.show()
 
 def get_min_value(array):
@@ -145,21 +145,12 @@ def inter_swap_nodes(node_1, node_2, lista):
     lista[index_2] = node_1
     return lista
 
-def intra_swap_nodes(visited_node, unvisited_node, lista,unvisited):
-    index_1 = lista.index(visited_node)
-    lista[index_1] = unvisited_node
+def intra_swap_nodes(visited_node_index, unvisited_node, lista, unvisited):
     unvisited.remove(unvisited_node)
-    unvisited.append(visited_node)
+    unvisited.append(lista[visited_node_index])
+    lista[visited_node_index] = unvisited_node
     return lista, unvisited
 
-def intra_random_swap(lista, unvisited, type = "nodes"):
-    if type =="nodes":
-        node_1 = random.choice(lista)
-        node_2 = random.choice(unvisited)
-        lista, unvisited = intra_swap_nodes(node_1, node_2, lista, unvisited)
-    if type == 'edges':
-        pass
-    return lista, unvisited
     
 def check_total(lista, distance_matrix, cost_list = False):
     lenght = len(lista)
@@ -169,73 +160,91 @@ def check_total(lista, distance_matrix, cost_list = False):
         b = lista[(i+1)%lenght]
         dist = distance_matrix[a][b]
         if cost_list is not False:
-            cost = cost_list[i]
+            cost = cost_list[a]
             total_cost += cost 
         total_cost += dist
     return total_cost
 
-def find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "intra"):
+from recalculate import rec_inter_node, rec_edge, rec_intra_node
+def find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "intra", cost_list = []):
     random.shuffle(unvisited)
     
-    random_lista = list(range(len(lista)))
+    random_lista_indexes = list(range(len(lista)))
+    random.shuffle(random_lista_indexes)
+    random_lista = [lista[x] for x in random_lista_indexes] #po prostu shuffle lista
 
-    random.shuffle(random_lista)
-
-    random_lista = [lista[x] for x in random_lista]
-    
+    # n = len(random_lista)
     if exchange == 'inter':
         for first_ind in range(len(lista)):
             for second_ind in range(first_ind+1, len(lista)):
-                new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], deepcopy(lista))
-                new_total = check_total(new_lista, distance_matrix)
+                # new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], deepcopy(lista))
+                # new_total = check_total(new_lista, distance_matrix, cost_list)
+                new_total = total_cost + rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix)
+                
                 if new_total < total_cost:
+                    new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], lista)
+
                     return new_lista, unvisited, new_total, False
                 
     elif exchange == 'intra':
         for unvisited_node in unvisited:
-            for visited_node in random_lista:
-                new_lista, new_unvisited = intra_swap_nodes(visited_node, unvisited_node, deepcopy(lista), deepcopy(unvisited))
-                new_total = check_total(new_lista, distance_matrix)
+            for visited_node_index in random_lista_indexes:
+
+                # new_total = check_total(new_lista, distance_matrix, cost_list)
+                new_total = total_cost + rec_intra_node(visited_node_index, unvisited_node, lista, distance_matrix, cost_list)
+                
+
                 if new_total < total_cost:
+                    new_lista, new_unvisited = intra_swap_nodes(visited_node_index, unvisited_node, lista, unvisited)
                     return new_lista, new_unvisited, new_total, False
                 
     return lista, unvisited, total_cost, True
 
 
-def find_best(lista, total_cost, unvisited, distance_matrix, exchange = 'intra'):
-    random.shuffle(unvisited)
+def find_best(lista, total_cost, unvisited, distance_matrix, exchange = 'intra', cost_list = [],alg = None):
+    random_lista_indexes = list(range(len(lista)))
     
-    random_lista = deepcopy(lista)
-
-    random.shuffle(random_lista)
-    
-
-    best = lista, unvisited, total_cost, True
+    random.shuffle(random_lista_indexes)
+    random_lista = [lista[x] for x in random_lista_indexes] #po prostu shuffle lista
+    best = -1, -1, total_cost, True
 
     if exchange == 'inter':
         for first_ind in range(len(lista)):
             for second_ind in range(first_ind+1, len(lista)):
-                new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], deepcopy(lista))
-                new_total = check_total(new_lista, distance_matrix)
+                # new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], deepcopy(lista))
+                # new_total = check_total(new_lista, distance_matrix, cost_list)
+                new_total = total_cost + rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix)
                 if new_total < best[2]:
-                    best = new_lista, unvisited, new_total, False
-                
-    random_lista = list(range(len(lista)))
+                    print("delta",rec_inter_node(random_lista_indexes[first_ind], random_lista_indexes[second_ind], lista, distance_matrix) , total_cost, new_total, first_ind, second_ind)
 
-    random.shuffle(random_lista)
+                    best = random_lista_indexes[first_ind], random_lista_indexes[second_ind], new_total, False
 
-    random_ = [lista[x] for x in random_lista]
+        visited_node_index, unvisited_node, new_total, terminate = best
+        if terminate:
+            return lista, unvisited, total_cost, terminate
+        else:
+            new_lista = inter_swap_nodes(random_lista[first_ind], random_lista[second_ind], lista)
+            print(len(np.unique(new_lista)))
+            # plotMap(alg.data, alg.create_cur_tour_from_list(new_lista))
+            return new_lista, unvisited, new_total, terminate
 
-    if exchange == 'intra':
+    elif exchange == 'intra':
         for unvisited_node in unvisited:
-            for visited_node in random_:
-                new_lista, new_unvisited = intra_swap_nodes(visited_node, unvisited_node, deepcopy(lista), deepcopy(unvisited))
-                new_total = check_total(new_lista, distance_matrix)
+            for visited_node_index in random_lista_indexes:
+                # new_lista, new_unvisited = intra_swap_nodes(visited_node_index, unvisited_node, deepcopy(lista), deepcopy(unvisited))
+                # new_total = check_total(new_lista, distance_matrix, cost_list)
+                new_total = total_cost + rec_intra_node(visited_node_index, unvisited_node, lista, distance_matrix, cost_list = cost_list)
 
                 if new_total < best[2]:
-                    best = new_lista, new_unvisited, new_total, False
+                    best = visited_node_index, unvisited_node, new_total, False
 
-    return best
+        visited_node_index, unvisited_node, new_total, terminate = best
+
+        if terminate:
+            return lista, unvisited, total_cost, terminate
+        else:
+            new_lista, new_unvisited = intra_swap_nodes(visited_node_index, unvisited_node, lista, unvisited)
+            return new_lista, new_unvisited, new_total, terminate
 
 
 def edge_swap_indices(lista, i, j):
@@ -251,6 +260,7 @@ def edge_swap_indices(lista, i, j):
         new_lista.append(lista[iter])
         if iter <0:
             # break
+            print(i, j, iter)
             assert(False)
 
 
@@ -259,7 +269,7 @@ def edge_swap_indices(lista, i, j):
 
 
 
-def find_first_better_edges(lista, total_cost, unvisited, distance_matrix):
+def find_first_better_edges(lista, total_cost, unvisited, distance_matrix, cost_list):
     random.shuffle(unvisited)
     n = len(lista)
     random_indexes = list(range(len(lista)))
@@ -278,20 +288,23 @@ def find_first_better_edges(lista, total_cost, unvisited, distance_matrix):
                 second_ind = first_ind
                 first_ind = _
             
-            new_lista = deepcopy(lista)
-            new_lista = edge_swap_indices(new_lista, random_indexes[first_ind],random_indexes[second_ind])
-            new_total = check_total(new_lista, distance_matrix)
+            # new_lista = deepcopy(lista)
+            # new_total = check_total(new_lista, distance_matrix, cost_list)
+            new_total = total_cost + rec_edge(random_indexes[first_ind], random_indexes[second_ind], lista, distance_matrix)
+
             if new_total < total_cost:
+                new_lista = edge_swap_indices(lista, random_indexes[first_ind],random_indexes[second_ind])
                 return new_lista, unvisited, new_total, False
-            
+    
     return lista, unvisited, total_cost, True
 
 
 
-def find_best_edges(lista, total_cost, unvisited, distance_matrix):
+def find_best_edges(lista, total_cost, unvisited, distance_matrix, cost_list):
 
-    best = lista, unvisited, total_cost, True
-    
+    # best = lista, unvisited, total_cost, True
+    best = -1, -1 , total_cost, True
+
     n = len(lista)
     random_indexes = list(range(len(lista)))
 
@@ -309,11 +322,14 @@ def find_best_edges(lista, total_cost, unvisited, distance_matrix):
                 second_ind = first_ind
                 first_ind = _
             
-            new_lista = deepcopy(lista)
-            new_lista = edge_swap_indices(new_lista, random_indexes[first_ind],random_indexes[second_ind])
-            new_total = check_total(new_lista, distance_matrix)
+            # new_lista = deepcopy(lista)
+            # new_total = check_total(new_lista, distance_matrix, cost_list)
+            new_total = total_cost + rec_edge(random_indexes[first_ind], random_indexes[second_ind], lista, distance_matrix)
 
             if new_total < best[2]:
-                best = new_lista, unvisited, new_total, False
+                best = random_indexes[first_ind],random_indexes[second_ind], new_total, False
 
-    return best
+    if not best[-1]:
+        lista = edge_swap_indices(lista, best[0], best[1])
+
+    return lista, unvisited, best[2], best[3]

@@ -11,6 +11,7 @@ class Algorithm():
         self.is_cost = len(data[0]) == 3
 
         self.create_dist_matrix_and_cost(data)
+        self.data = data
         
     
     def starting_solution(self, starting_node = 0, second_node = 1):
