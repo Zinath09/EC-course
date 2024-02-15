@@ -5,7 +5,7 @@ import pandas as pd
 import csv
 import random
 from utils import *
-from local_search import local_search, repeat_local
+from local_search import local_search_candidate, repeat_local_candidate
 
 random.seed(0)
 data = get_data('TSPD.csv')
@@ -15,12 +15,12 @@ random_list = [i for i in range(len(data))]
 print(len(data))
 
 result = dict()
-for start_solution in ['random', 'best']:
-    for alg_type in ['greedy', 'steepest']:
-        for neighbors in ['nodes', 'edges']:
+for start_solution in ['random']:
+    for alg_type in ['steepest']:
+        for neighbors in ['edges']:
             title = f"{'_'.join([start_solution, alg_type, neighbors])}"
             print("*"*10, title)
-            costs, best_sol ,best_ind_random_random, time =  repeat_local(local_search, random_list, data, start_solution, alg_type, neighbors)
+            costs, best_sol ,best_ind_random_random, time =  repeat_local_candidate(local_search_candidate,data, list(range(200)))
             best = f"{[int(x) for x in best_sol]}"
             result[title] = dict()
             result[title]["min"] = min(costs)

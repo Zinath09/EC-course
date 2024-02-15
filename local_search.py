@@ -1,17 +1,17 @@
 import random
-from utils import create_cur_tour_from_list, create_dist_matrix_and_cost, check_total, find_best, find_best_edges, find_first_better, find_first_better_edges, plotMap, get_data
+from utils import create_cur_tour_from_list, create_dist_matrix_and_cost, check_total, find_best, find_best_edges, plotMap, get_data
 import numpy as np
-from algorithms import greedy_cycle
 import time
 from tqdm import tqdm
-def repeat_local(method, indices, data, start_solution, alg_type, neighbors):
+random.seed(0)
+def repeat_local_candidate(method, data, indices):
     start_time = time.time()
     total_cost = []
     best_cost = np.inf
     best_sol = -1
     best_ind = -1
     for i in tqdm(indices):
-        cost, sol = method(data, start_solution, alg_type, neighbors, i)
+        cost, sol = method(data)
         total_cost.append(cost)
         if cost<best_cost:
             best_cost = cost
@@ -22,28 +22,22 @@ def repeat_local(method, indices, data, start_solution, alg_type, neighbors):
     execution_time = end_time - start_time
     return total_cost, best_sol, best_ind, execution_time
 
-def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
+def local_search_candidate(data):
     n = len(data)
     distance_matrix, cost_list = create_dist_matrix_and_cost(data)
+    n_candidates = round(n/2)+1
+    candidates = np.zeros((n, n_candidates), dtype=int)
+    for i in range(n):
+        cand = np.argsort(distance_matrix[i] + cost_list[i])[:n_candidates+1]
+        ind = np.where(cand == i)
+        cand =np.delete(cand, ind)
+        candidates[i] = cand[:n_candidates]
 
-    if start_solution == "random":
-        lista = list(range(0, len(data)))
-        random.shuffle(lista)
-        lista = lista[:round(float(len(lista))/2)]
-        # alg.create_cur_tour_and_update(lista)
-        total_cost = check_total(lista, distance_matrix, cost_list)
 
-
-    if start_solution =="best":
-        total_cost, edges = greedy_cycle(distance_matrix, cost_list, n, round(n/2), start_index)
-
-        lista = edges[0]
-        list_1, list_2 = zip(*edges)
-        while True:
-            next = list_2[list_1.index(lista[-1])]
-            if next == lista[0]:
-                break
-            lista.append(next)
+    lista = list(range(0, len(data)))
+    random.shuffle(lista)
+    lista = lista[:round(float(len(lista))/2)]
+    total_cost = check_total(lista, distance_matrix, cost_list)
 
 
     unvisited = [x for x in range(len(data))]
@@ -51,52 +45,21 @@ def local_search(data, start_solution, alg_type, neighbors, start_index = 0):
     for i in lista:
         unvisited.remove(i)
 
-    for i in range(5):
+    for i in range(500):
         assert total_cost>0, f"Outside function{total_cost, i}"
-        if alg_type == "steepest":
-            lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra",cost_list=cost_list)
-            if neighbors == "nodes":
-                lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "inter", cost_list=cost_list)
-            elif neighbors == 'edges':
-                lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list)
-                                    
-        elif alg_type == "greedy":
-            first_exchange = ["intra","inter"][random.randint(0,1)]
-            if first_exchange == 'inter':
-                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter", cost_list=cost_list)
+        lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra", cost_list=cost_list, candidates = candidates)
 
-            if neighbors == "nodes":
-                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "intra", cost_list=cost_list)
-
-            elif neighbors == 'edges':
-                lista, unvisited, total_cost, terminate = find_first_better_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list)
-
-            if first_exchange != 'inter':
-                lista, unvisited, total_cost, terminate = find_first_better(lista, total_cost, unvisited, distance_matrix, exchange = "inter",cost_list=cost_list)
+        lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list, candidates = candidates)
 
         if terminate:
-            # print(f"{'_'.join([start_solution, alg_type, neighbors])}",i)
             break
-        # print(total_cost, i)
-    edges = create_cur_tour_from_list(lista,distance_matrix, cost_list)
-    # print(cost_list)
-    # plotMap(data, edges)
     return total_cost, lista
 
 
 
 if "__main__" == __name__:
     data = get_data('TSPD.csv')
-    print(len(data))
-    # data = [[1,0,0], [1,1,0], [1,2,0], [1,3,0], [2,3,0], [2,2,0], [2,1,0], [2,0,0]]
-    for i in range(len(data)):
-        data[i][-1] = i    
-    start_solution = "random"
-    start_solution = "best"
-    alg_type = "greedy"
-    alg_type = "steepest"
-
-    neighbors = "nodes" 
-    neighbors = "edges" 
-
-    x = local_search(data, start_solution, alg_type, neighbors)
+    # x = local_search_candidate(data)
+    lista = [136, 73, 185, 132, 52, 8, 63, 82, 138, 21, 192, 196, 117, 71, 107, 12, 119, 59, 147, 159, 64, 129, 89, 58, 72, 85, 114, 150, 44, 162, 158, 67, 156, 91, 70, 51, 174, 161, 140, 188, 148, 141, 130, 13, 142, 53, 69, 113, 115, 40, 16, 18, 19, 190, 198, 135, 95, 172, 163, 182, 169, 66, 128, 5, 34, 179, 122, 143, 127, 24, 121, 31, 101, 38, 103, 131, 50, 152, 94, 112, 43, 116, 99, 0, 57, 137, 165, 37, 123, 134, 36, 25, 154, 88, 55, 153, 80, 157, 145, 79]
+    dist, cost = create_dist_matrix_and_cost(data)
+    plotMap(data, edges=create_cur_tour_from_list(lista, dist, cost))
