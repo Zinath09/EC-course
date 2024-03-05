@@ -1,174 +1,168 @@
 import random
-from utils import create_cur_tour_from_list, create_dist_matrix_and_cost, check_total, find_best, find_best_edges, plotMap, get_data
+from utils import create_cur_tour_from_list, create_dist_matrix_and_cost, check_total, find_best, find_best_edges, plotMap, get_data, edge_swap_indices, intra_swap_nodes
+
 import numpy as np
 import time
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 random.seed(0)
-def repeat_local_candidate(method, data, indices):
+def repeat_ils(method, data, indices):
     start_time = time.time()
     total_cost = []
     best_cost = np.inf
     best_sol = -1
-    best_ind = -1
+    iterations = []
     for i in tqdm(indices):
-        cost, sol = method(data)
+        cost, sol, iteration = method(data)
         total_cost.append(cost)
+        iterations.append(iteration)
         if cost<best_cost:
             best_cost = cost
             best_sol = sol
-            best_ind = i
     end_time = time.time()
-
     execution_time = end_time - start_time
-    return total_cost, best_sol, best_ind, execution_time
+    execution_time = execution_time/len(indices)
+    return total_cost, iterations, best_sol, execution_time
 
+def multiple_start_candidate_ils(data):
 
-def iterated_local_search_candidate(data):
+    #summary 
     best_cost = np.inf
     best_lista = []    
-    msls_time = 60.*15 # 15minutes
-    start_time = time.time()
     totals = []
-    for n_perturbation in tqdm(range(2000)):
-        n = len(data)
-        distance_matrix, cost_list = create_dist_matrix_and_cost(data)
-        n_candidates = round(n/2)+1
-        candidates = np.zeros((n, n_candidates), dtype=int)
-        for i in range(n):
-            cand = np.argsort(distance_matrix[i] + cost_list[i])[:n_candidates+1]
-            ind = np.where(cand == i)
-            cand =np.delete(cand, ind)
-            candidates[i] = cand[:n_candidates]
 
+    #data
+    n = len(data)
+    distance_matrix, cost_list = create_dist_matrix_and_cost(data)
 
+    #candidate matrix
+    n_candidates = n-1#round(n/2)+1
+    candidates = np.zeros((n, n_candidates), dtype=int)
+    for i in range(n):
+        cand = np.argsort(distance_matrix[i] + cost_list[i])#[:n_candidates+1]
+        ind = np.where(cand == i)
+        cand =np.delete(cand, ind)
+        candidates[i] = cand#[:n_candidates]
+
+    for n_iteration in tqdm(range(200)):
+        #prepare random list of visited nodes and unvisited nodes
         lista = list(range(0, len(data)))
         random.shuffle(lista)
         lista = lista[:round(float(len(lista))/2)]
         total_cost = check_total(lista, distance_matrix, cost_list)
-
         unvisited = [x for x in range(len(data))]
-        
         for i in lista:
             unvisited.remove(i)
 
-        for i in range(500):
-            assert total_cost>0, f"Outside function{total_cost, i}"
+        for i_ls in range(500):
+            assert total_cost>0, f"Outside function{total_cost, i_ls}"
             lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra", cost_list=cost_list, candidates = candidates)
-
             lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list, candidates = candidates)
-
             if terminate:
                 break
-
         if total_cost < best_cost:
             best_cost = total_cost
             best_lista = lista
-
         # print(time.time()- start_time, msls_time, total_cost)
         totals.append(total_cost)
-        if time.time()-start_time > msls_time:
-            plt.plot(totals)
-            plt.plot()
-            print(best_cost)
-            return best_cost, best_lista
-        else:
-            lista, unvisited = perturbate(lista, unvisited)
-            total_cost = check_total(lista, dist, cost)
+        # print(totals)
+    # plt.plot(totals)
+    # plt.show()
+    return best_cost, best_lista, i_ls
 
-    return best_cost, best_lista
+def perturbation_candidate_ils(data):
+    msls_time = 46. # 5minutes
 
-
-def perturbate(lista,unvisited):#, , distance_matrix, cost_list    
-    n = len(lista)
-    unvisited = list(set(range(2*2)) - set(lista))
-
-    #30% of the list in one part is removed and replaced with random
-    random.seed()
-    index_1 = random.randint(0,n)
-    diff = round(0.3*n)
-    index_2 = (index_1+diff)%n
-    # print(index_1, index_2)
-    if index_1 > index_2:
-        lista = lista[index_1:] + lista[:index_2] + lista[index_2:index_1]
-    else:
-        lista = lista[index_1:] + lista[:index_1]
-    assert len(lista) == len(np.unique(lista)), f"JUST REORDERING {lista}, {len(lista), len(np.unique(lista))}"
-    # print("lista:", lista)
-    # print("to change:", lista[:diff])
-
-
-    unvisited += lista[:diff]
-    replacement = np.random.choice(unvisited, diff, replace = False)
-    # print("replacement:", lista[:diff])
-
-    lista[:diff] = replacement
-    # print([(i,x) for i, x in enumerate(lista) if lista.count(x) > 1])
-    for i in replacement:
-        unvisited.remove(i)
-        
-    assert len(lista) == len(np.unique(lista)), f"AFTER REPLACEMENT {lista}, {len(lista), len(np.unique(lista))}\n{replacement}, "
-    return lista, unvisited
-
-    
-def multiple_local_search_candidate(data, rep = 200, start = []):
+    #summary 
     best_cost = np.inf
     best_lista = []    
-    for repetition in tqdm(range(rep)):
-        n = len(data)
-        distance_matrix, cost_list = create_dist_matrix_and_cost(data)
-        n_candidates = round(n/2)+1
-        candidates = np.zeros((n, n_candidates), dtype=int)
-        for i in range(n):
-            cand = np.argsort(distance_matrix[i] + cost_list[i])[:n_candidates+1]
-            ind = np.where(cand == i)
-            cand =np.delete(cand, ind)
-            candidates[i] = cand[:n_candidates]
+    start_time = time.time()
+    totals = []
 
-        if start!=[]:
-            lista = start
-        else:
-            lista = list(range(0, len(data)))
-            random.shuffle(lista)
-            lista = lista[:round(float(len(lista))/2)]
+    #data
+    n = len(data)
+    distance_matrix, cost_list = create_dist_matrix_and_cost(data)
 
+    #candidate matrix
+    n_candidates = n-1#round(n/2)+1
+    candidates = np.zeros((n, n_candidates), dtype=int)
+    for i in range(n):
+        cand = np.argsort(distance_matrix[i] + cost_list[i])#[:n_candidates+1]
+        ind = np.where(cand == i)
+        cand =np.delete(cand, ind)
+        candidates[i] = cand#[:n_candidates]
+
+    #prepare random list of visited nodes and unvisited nodes
+    lista = list(range(0, len(data)))
+    random.shuffle(lista)
+    lista = lista[:round(float(len(lista))/2)]
+    total_cost = check_total(lista, distance_matrix, cost_list)
+    unvisited = [x for x in range(len(data))]
+    for i in lista:
+        unvisited.remove(i)
+
+    for n_iteration in tqdm(range(10000)):
+        lista, unvisited = perturbate(lista, unvisited)
         total_cost = check_total(lista, distance_matrix, cost_list)
 
-        unvisited = [x for x in range(len(data))]
-        
-        for i in lista:
-            unvisited.remove(i)
-
-        for i in range(500):
-            assert total_cost>0, f"Outside function{total_cost, i}"
+        for i_ls in range(500):
+            assert total_cost>0, f"Outside function{total_cost, i_ls}"
             lista, unvisited, total_cost, terminate = find_best(lista, total_cost, unvisited, distance_matrix, exchange = "intra", cost_list=cost_list, candidates = candidates)
-
             lista, unvisited, total_cost, terminate = find_best_edges(lista, total_cost, unvisited, distance_matrix,cost_list=cost_list, candidates = candidates)
-
             if terminate:
                 break
-
         if total_cost < best_cost:
             best_cost = total_cost
             best_lista = lista
-    return best_cost, best_lista
+        # print(time.time()- start_time, msls_time, total_cost)
+        totals.append(total_cost)
+        # print(totals)
+        if time.time()-start_time > msls_time:
+            # plt.plot(totals)
+            # plt.plot()
+            # print(best_cost)
+            return best_cost, best_lista, i_ls
+
+    return best_cost, best_lista,i_ls
+
+def perturbate(lista, unvisited):
+    n = len(lista)
+    n_perturbation = round(0.15 * n)
+    node_indices = np.random.choice(list(range(0,n)), n_perturbation)
+    nodes_2_indices = np.random.randint(0,2*n, n_perturbation)
+    
+    for p in range(n_perturbation):
+        is_visited = nodes_2_indices[p] < n
+        if is_visited:
+            #preparation for edge exchange
+            first_ind = node_indices[p]
+            second_ind = nodes_2_indices[p]
+             #first index should be first in lista
+            if first_ind > second_ind:
+                _ = second_ind
+                true_second_ind = first_ind
+                true_first_ind = _
+            else:
+                true_second_ind = second_ind
+                true_first_ind = first_ind
+            #they cannot be consecutive nodes in lista
+            diff = abs(true_second_ind - true_first_ind)
+            if  diff == 1 or diff == n-1 or diff==0:
+                continue
+            lista = edge_swap_indices(lista,true_first_ind, true_second_ind)
+        else:
+            lista, unvisited = intra_swap_nodes(node_indices[p], unvisited[nodes_2_indices[p]-n], lista, unvisited)
+    return lista, unvisited
 
 
 
 if "__main__" == __name__:
-    data = get_data('TSPD.csv')
-    # total_cost, lista = multiple_local_search_candidate(data,rep = 1)
-    # print("total_cost", total_cost)
+    data = get_data('TSPD.csv')[::]
     dist, cost = create_dist_matrix_and_cost(data)   
-    # unvisited = set(list(range(0,len(data)))) - set(lista)
-    total_cost, lista =iterated_local_search_candidate(data)
-    # for i in range(50):
-    #     perturbated_lista, unvisited = perturbate(lista,list(unvisited))
-    # # plotMap(data, edges=create_cur_tour_from_list(perturbated_lista, dist, cost))
-    #     total_cost, lista = multiple_local_search_candidate(data, rep = 1, start=perturbated_lista)
-    #     print("total_cost", total_cost)
-    plotMap(data, edges=create_cur_tour_from_list(lista, dist, cost))
+    total_cost, lista, i_ls = multiple_start_candidate_ils(data)
 
-    # perturbated_lista, unvisited = perturbate(list(range(0,100)),list(range(100,200)))
-    # print(len(np.unique(perturbated_lista)))
+    # total_cost, lista, i_ls =perturbation_candidate_ils(data)
+    plotMap(data, edges=create_cur_tour_from_list(lista, dist, cost))
+    print(total_cost, lista, i_ls)
+    

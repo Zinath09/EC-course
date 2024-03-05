@@ -1,3 +1,3 @@
-# EvolutionaryComputation Lab4 Local search  
-always random
-only edges 
+# EvolutionaryComputation Lab6 Iterative Local search  
+- multiple start local search
+- iterated local search

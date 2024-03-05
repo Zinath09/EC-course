@@ -19,7 +19,7 @@ def plotMap(nodes, edges=[], colors = False):
         
     X = [c[0] for c in nodes]
     Y = [c[1] for c in nodes]
-    S = [c[2] for c in nodes]
+    S = [-c[2] for c in nodes]
     
     # plt.scatter(X, Y, S, c = S, cmap="RdYlGn", )
     # plt.scatter(X, Y, c = S, cmap="RdYlGn", )
@@ -149,9 +149,8 @@ def edge_swap_indices(lista, i, j):
         if iter == i:
             break
         new_lista.append(lista[iter])
-        if iter <0:
-            print(i, j, iter)
-            assert(False)
+        assert iter >= 0, f"{i, j, iter}"
+
     new_lista  += lista[j+1:]
     return new_lista
 
