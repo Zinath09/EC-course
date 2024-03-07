@@ -1,3 +1,1 @@
-# EvolutionaryComputation Lab6 Iterative Local search  
-- multiple start local search
-- iterated local search
+# EvolutionaryComputation Lab7 Destroy and repair  

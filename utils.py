@@ -58,14 +58,10 @@ def create_dist_matrix_and_cost(data):
 
 def create_cur_tour_from_list(lista, node_distances, cost_list):
     lenght = len(lista)
-    total_cost = 0
     edges = []
     for i in range(lenght):
         a = lista[i]
         b = lista[(i+1)%lenght]
-        dist = node_distances[a][b]
-        cost = cost_list[i]
-        total_cost += dist + cost 
         edges.append([a,b])
     return edges
 
